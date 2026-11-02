@@ -11,14 +11,14 @@ def get_raw_path():
     Obtiene la ruta de la carpeta 'raw' dentro del directorio de datos.
     """
     BASE_DIR = get_base_dir()
-    return BASE_DIR / "data" / "raw"
+    return BASE_DIR / "data" / "bronze"
 
 def get_processed_path():
     """
     Obtiene la ruta de la carpeta 'processed' dentro del directorio de datos.
     """
     BASE_DIR = get_base_dir()
-    return BASE_DIR / "data" / "processed"
+    return BASE_DIR / "data" / "silver"
 
 def files_format():
     """

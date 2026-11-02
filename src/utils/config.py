@@ -6,34 +6,44 @@ def get_base_dir():
     """
     return Path(__file__).resolve().parents[2]
 
+def get_raw_path():
+    """
+    Obtiene la ruta de la carpeta 'raw' dentro del directorio de datos.
+    """
+    BASE_DIR = get_base_dir()
+    return BASE_DIR / "data" / "raw"
+
+def get_processed_path():
+    """
+    Obtiene la ruta de la carpeta 'processed' dentro del directorio de datos.
+    """
+    BASE_DIR = get_base_dir()
+    return BASE_DIR / "data" / "processed"
 
 def files_format():
     """
     Devuelve un diccionario con los formatos de archivos y sus funciones correspondientes.
     """
-    BASE_DIR = get_base_dir()
-    RAW_PATH = BASE_DIR / "data" / "raw"
 
-    FILES_FORMAT = {}
+    RAW_PATH = get_raw_path()
+
+    format = {}
     
     archivos = list(RAW_PATH.rglob("*.ods"))
 
     for archivo in archivos:
-        FILES_FORMAT[archivo.name] = None
+        relative_path = archivo.relative_to(RAW_PATH)
 
-    for archivo, formato in FILES_FORMAT.items():
+        if ("Anexo" in archivo.name and "2023" in archivo.name):
+            format[relative_path] = "set_headers_format_3"
 
-        if ("Anexo" in archivo and "2023" in archivo):
-            FILES_FORMAT[archivo] = "set_headers_format_3"
-
-        elif ("Primer" in archivo and "2023" in archivo) or ("Segundo" in archivo and "2023" in archivo):
-            FILES_FORMAT[archivo] = "set_headers_format_2"
+        elif ("Primer" in archivo.name and "2023" in archivo.name) or ("Segundo" in archivo.name and "2023" in archivo.name):
+            format[relative_path] = "set_headers_format_2"
 
         else:
-            FILES_FORMAT[archivo] = "set_headers_format_1"
+            format[relative_path] = "set_headers_format_1"
 
-    return FILES_FORMAT
-
+    return format
 
 
 

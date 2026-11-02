@@ -1,6 +1,10 @@
 import pandas as pd
-from src.utils.config import get_base_dir
+from src.utils.config import get_base_dir, get_raw_path, get_processed_path, files_format
 
+
+#--------------------------------------------
+# Funciones de Estandarización de Formato
+#--------------------------------------------
 
 def set_headers_format_1(df):
 
@@ -26,37 +30,72 @@ def set_headers_format_3(df):
     df = df.iloc[3:].reset_index(drop=True)  # Eliminamos las filas extras del encabezado del .ods
     return df
 
-def get_files():
 
-    "Devuelve una lista con todos los archivos de la carpeta de datos originales"
-    
-    BASE_DIR = get_base_dir()
-    RAW_PATH = BASE_DIR / "data" / "raw"
+#--------------------------------------------
+# Diccionario de Transformaciones de Formato
+#--------------------------------------------
 
-    archivos = list(RAW_PATH.rglob("*.ods"))
+TRANSFORMATIONS = {
+    "set_headers_format_1": set_headers_format_1,
+    "set_headers_format_2": set_headers_format_2,
+    "set_headers_format_3": set_headers_format_3,
+}
 
-    return archivos
+
+#--------------------------------------------
+# Función para Procesar Archivos
+#--------------------------------------------
+
 
 def process_file():
 
-    BASE_DIR = get_base_dir()
-    RAW_PATH = BASE_DIR / "data" / "raw"
-    PROCESSED_PATH = BASE_DIR / "data" / "processed"
+    RAW_PATH = get_raw_path()
+    PROCESSED_PATH = get_processed_path()
 
-    file_dir = RAW_PATH / "2023" / "202300_Anexo_Contratos_Menores_2023.ods" # Cambia esto por la carpeta que contiene tus archivos .ods
+    # Obtenemos el diccionario de formatos de archivos
+    formats = files_format()
 
-    df = pd.read_excel(file_dir, engine="odf")  # Cambia esto por la ruta de tu archivo .ods
+    # Listamos todos los archivos con los datos originales
+    archivos = list(RAW_PATH.rglob("*.ods"))
 
-    df = set_headers_format_3(df)  # Cambia esto por la función de formato que necesites
+    for archivo in archivos:
 
-    output_dir = PROCESSED_PATH / "2023"
-    output_dir.mkdir(parents=True, exist_ok=True)
+        # Obtenemos el formato correspodiente del archivo a partir de su clave en el diccionario
+        relative_path = archivo.relative_to(RAW_PATH) #'Año/Nombre archivo.ods'
+        format_name = formats.get(relative_path) # 'set_headers_format_x'
+
+        if format_name is None:
+            print(f"Formato no definido para: {archivo.name}")
+            continue
+
+        # Obtenemos la transformación conrrespondiente
+        transform_function = TRANSFORMATIONS.get(format_name) 
+
+        # Leer el archivo .ods
+        df = pd.read_excel(archivo, engine="odf")
+
+        # Aplicamos la transformación
+        df = transform_function(df)
+
+        # Crear ruta de salida conservando la estructura de carpetas
+        output_dir = (PROCESSED_PATH / relative_path).with_suffix('.csv')
+        output_dir.parent.mkdir(parents=True, exist_ok=True) #Crea carpetas hasta el archivo
+
+        # Exportar el CSV
+        df.to_csv(output_dir, index=False, encoding="utf-8-sig")
+
+        # Mensaje de procesamiento
+        print(f"Procesado: {archivo.name} -> {output_dir}")
+
+
+# --------------------------------------------
+# Ejecución
+#--------------------------------------------
+
+if __name__ == "__main__":
+    process_file()
+
     
-    # Crear nombre del archivo CSV
-    output_file = output_dir / "202300_Anexo_Contratos_Menores_2023.csv"
-    
-    # Exportar CSV
-    df.to_csv(output_file.with_suffix(".csv"), index=False, encoding="utf-8-sig")
-    
-    print(f"Procesado: 202300_Anexo_Contratos_Menores_2023.ods -> {output_file}")
+
+
 

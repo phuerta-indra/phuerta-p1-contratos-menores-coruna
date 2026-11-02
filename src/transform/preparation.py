@@ -1,16 +1,12 @@
 import pandas as pd
-from pathlib import Path
-
-# Directorio raíz del proyecto
-BASE_DIR = Path(__file__).resolve().parents[2]
-
-# Directorio de los datos en bruto, y el directorio de los datos procesados
-RAW_PATH = BASE_DIR / "data" / "raw"
-
-PROCESSED_PATH = BASE_DIR / "data" / "processed"
+from ..utils.config import get_base_dir
 
 
-def set_headers():
+def set_headers_format_1():
+
+    BASE_DIR = get_base_dir()
+    RAW_PATH = BASE_DIR / "data" / "raw"
+    PROCESSED_PATH = BASE_DIR / "data" / "processed"
 
     archivos = list(RAW_PATH.rglob("*.ods"))
 
@@ -22,7 +18,7 @@ def set_headers():
 
         # Para este formato hay que dropear la primera y tercera fila, y hacer header la segunda
         df.columns = df.iloc[0] # Hacemos la segunda fila del .ods como header
-        df = df.drop([0, 1]).reset_index(drop=True) # Eliminamos las filas extras del encabezado del .ods
+        df = df.iloc[2:].reset_index(drop=True) # Eliminamos las filas extras del encabezado del .ods
 
         # Crear carpeta de destino conservando el año
         output_dir = PROCESSED_PATH / archivo.parent.name
@@ -36,4 +32,10 @@ def set_headers():
 
         print(f"Procesado: {archivo.name} -> {output_file}")
 
-set_headers()
+
+
+def set_headers_format_2():
+
+    BASE_DIR = get_base_dir()
+    RAW_PATH = BASE_DIR / "data" / "raw"
+    PROCESSED_PATH = BASE_DIR / "data" / "processed"

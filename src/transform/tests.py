@@ -74,8 +74,22 @@ def process_file():
         # Leer el archivo .ods
         df = pd.read_excel(archivo, engine="odf")
 
+        # Lista con los nombres de las columnas estandarizadas
+        COLUMN_NAMES = [
+            "referencia",
+            "tipo_contrato",
+            "objeto",
+            "fecha",
+            "nif",
+            "adjudicatario",
+            "precio",
+            "negociado"
+        ]
+
         # Aplicamos la transformación
         df = transform_function(df)
+
+        df.columns = COLUMN_NAMES  # Estandarizamos los nombres de las columnas
 
         # Crear ruta de salida conservando la estructura de carpetas
         output_dir = (PROCESSED_PATH / relative_path).with_suffix('.csv')

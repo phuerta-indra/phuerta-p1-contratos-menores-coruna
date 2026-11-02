@@ -1,17 +1,21 @@
 import pandas as pd
-from src.utils.config import get_processed_path
+from src.utils.config import get_silver_path
 
+
+#--------------------------------------------
+# Función para Unificar los CSV
+#--------------------------------------------
 
 def consolidate_files():
 
-    PROCESSED_PATH = get_processed_path()
+    SILVER_PATH = get_silver_path()
 
     # Definimos la ruta donde se van a guardar los archivos consolidados
-    output_dir = PROCESSED_PATH / "consolidated" / "contratos_menores_consolidados.csv"
+    output_dir = SILVER_PATH / "consolidated" / "contratos_menores_consolidados.csv"
     output_dir.parent.mkdir(parents=True, exist_ok=True)
 
     # Obtenemos los archivos csv procesados
-    archivos = list(PROCESSED_PATH.rglob("*.csv"))
+    archivos = list(SILVER_PATH.rglob("*.csv"))
 
     # Evitar leer el csv consolidado (si existe)
     archivos = [archivo for archivo in archivos if archivo != output_dir]

@@ -1,5 +1,5 @@
 import pandas as pd
-from src.utils.config import get_base_dir, get_raw_path, get_processed_path, files_format
+from src.utils.config import get_base_dir, get_bronze_path, get_silver_path, files_format
 
 
 #--------------------------------------------
@@ -49,19 +49,19 @@ TRANSFORMATIONS = {
 
 def process_file():
 
-    RAW_PATH = get_raw_path()
-    PROCESSED_PATH = get_processed_path()
+    BRONZE_PATH = get_bronze_path()
+    SILVER_PATH = get_silver_path()
 
     # Obtenemos el diccionario de formatos de archivos
     formats = files_format()
 
     # Listamos todos los archivos con los datos originales
-    archivos = list(RAW_PATH.rglob("*.ods"))
+    archivos = list(BRONZE_PATH.rglob("*.ods"))
 
     for archivo in archivos:
 
         # Obtenemos el formato correspodiente del archivo a partir de su clave en el diccionario
-        relative_path = archivo.relative_to(RAW_PATH) #'Año/Nombre archivo.ods'
+        relative_path = archivo.relative_to(BRONZE_PATH) #'Año/Nombre archivo.ods'
         format_name = formats.get(relative_path) # 'set_headers_format_x'
 
         if format_name is None:
@@ -92,7 +92,7 @@ def process_file():
         df.columns = COLUMN_NAMES  # Estandarizamos los nombres de las columnas
 
         # Crear ruta de salida conservando la estructura de carpetas
-        output_dir = (PROCESSED_PATH / relative_path).with_suffix('.csv')
+        output_dir = (SILVER_PATH / relative_path).with_suffix('.csv')
         output_dir.parent.mkdir(parents=True, exist_ok=True) #Crea carpetas hasta el archivo
 
         # Exportar el CSV

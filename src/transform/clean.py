@@ -2,6 +2,8 @@ import pandas as pd
 from src.utils.config import get_silver_path, get_gold_path
 from src.utils.utils import read_csv, export_csv
 
+
+
 def explore(df):
 
     print("\n--- PRIMERAS FILAS ---")
@@ -36,6 +38,7 @@ def explore(df):
     return df
 
 
+
 def clean_text(df):
 
     # Limpiar espacios en blanco al inicio y al final de las cadenas de texto
@@ -45,7 +48,27 @@ def clean_text(df):
     for col in text_columns:
         df[col] = df[col].str.strip()
 
+    # Para examinar columna por columna si hay algún nulo oculto
+    """for col in text_columns:
+        print(f"\n--- {col} ---")
+        print(df[col].str.len().describe()[["min", "max"]])
+        print(df[col].value_counts().head(5))"""
+
     return df
+
+
+
+def clean_categories(df):
+
+    "Convertir todos los tipos de dato str están en mayúsculas"
+
+    df["tipo_contrato"] = df["tipo_contrato"].str.upper()
+    df["objeto"] = df["objeto"].str.upper()
+    df["adjudicatario"] = df["adjudicatario"].str.upper()
+    df["negociado"] = df["negociado"].str.upper()
+
+    return df
+
 
 
 def clean_prices(df):
@@ -83,6 +106,7 @@ def clean_prices(df):
     df["precio"] = converted
 
     return df
+
 
 
 def clean_dates(df):
@@ -130,17 +154,6 @@ def clean_dates(df):
 
 
 
-def clean_categories(df):
-
-    "Convertir todos los tipos de dato str están en mayúsculas"
-
-    df["tipo_contrato"] = df["tipo_contrato"].str.upper()
-    df["objeto"] = df["objeto"].str.upper()
-    df["adjudicatario"] = df["adjudicatario"].str.upper()
-    df["negociado"] = df["negociado"].str.upper()
-
-    return df
-
 def clean_duplicates(df):
 
     "Función para gestionar valores duplicados"
@@ -161,12 +174,57 @@ def clean_duplicates(df):
 
     duplicate = df[df.duplicated(subset=["referencia", "fecha", "precio"], keep="first")]
     print(f"Duplicados eliminados: {len(duplicate)}")
-    print(duplicate["referencia", "fecha", "precio"])
+    print(duplicate[["referencia", "fecha", "precio"]])
 
     # Eliminamos los duplicados del tipo 1 quedandonos con el primer registro
     df = df.drop_duplicates(subset=["referencia", "fecha", "precio"], keep="first")
 
     return df.sort_index()
+
+
+
+def clean_nif(df):
+
+    "Corregir NIF mal escritos, comprobados contra el mismo adjudicatario"
+    # Para ver los NIF que están mal o que tienen otro formato al español:
+    """
+    print(df["nif"].str.len().value_counts())
+    print(df.loc[df["nif"].str.len() != 9, ["nif", "adjudicatario"]])
+    print(df.loc[df["adjudicatario"].str.len() <= 6, "adjudicatario"].unique())
+    
+    print(df[df["adjudicatario"].str.contains("TRANVÍAS|PORTALES DE GALICIA|ORONA|RALLYE|SENSO", na=False)]
+      .groupby(["adjudicatario", "nif"]).size())
+    """
+    # Hay empresas extranjeras por lo que hay NIF que tiene formato internacional
+
+    # Modificamos solo los que estamos seguros de que están mal escritos
+    nif_dic = {
+        "A1500227": "A15000227",    # Compañía de tranvias coruña
+        "F200253318": "F20025318",  # Orona S.COOP.
+        "ESB70250055": "B70250055", #Senso ingeniería e instalaciones
+    }
+
+    df["nif"] = df["nif"].replace(nif_dic)
+
+    return df
+
+
+
+def clean_adj(df):
+
+    "Unificar los nombres de los adjudicatarios según el NIF"
+
+    # Ignorar los NIF enmascarados ya que pueden no identificar a una única persona
+    masked = df["nif"].str.contains("*", regex=False)
+
+    # Nombre más frecuente de cada NIF
+    nombre_comun = df.groupby("nif")["adjudicatario"].transform(lambda x: x.mode().iloc[0])
+
+    # Cambiamos los nombre en el df
+    df.loc[~masked, "adjudicatario"] = nombre_comun[~masked]
+
+    return df
+
 
 
 def clean_data(df):
@@ -177,17 +235,22 @@ def clean_data(df):
 
     df = clean_text(df)
     print("Espacios corregidos")
+    df = clean_nif(df)
+    print("NIF corregidos")
     df = clean_prices(df)
     print(f"Precios convertidos --> {df["precio"].dtype}")
     df = clean_dates(df)
     print(f"Fechas convertidas --> {df["fecha"].dtype}")
     df = clean_categories(df)
     print("Resto de columnas --> str mayusc.")
+    df = clean_adj(df)
+    print("Nombres de los adjudicatarios actualizados")
     print("---------------------------------------------")
 
     df = clean_duplicates(df)
 
     return df
+
 
 
 def transform():
@@ -203,7 +266,7 @@ def transform():
     
     df = clean_data(df)
 
-    df = explore(df)
+    #df = explore(df)
 
     output_dir = GOLD_PATH/"cleaned"/"contratos_menores_limpios.csv"
     output_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -213,13 +276,12 @@ def transform():
     return df
 
 
+
 if __name__ == "__main__":
 
     df = transform()
 
-    dup = df[df["referencia"].duplicated(keep=False)].sort_values("referencia")
-    print(len(dup))
-    print(dup[["referencia", "fecha", "adjudicatario", "precio", "objeto", "negociado"]])
+    
 
    
 

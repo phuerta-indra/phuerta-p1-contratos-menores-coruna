@@ -319,7 +319,7 @@ def clean_data(df):
 
 
 
-def transform():
+def transform_files():
 
     "Aplica las transformaciones de las funciones anteriores"
 
@@ -345,7 +345,7 @@ def transform():
 
 if __name__ == "__main__":
 
-    df = transform()
+    transform_files()
     
 
     

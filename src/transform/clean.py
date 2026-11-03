@@ -141,6 +141,33 @@ def clean_categories(df):
 
     return df
 
+def clean_duplicates(df):
+
+    "Función para gestionar valores duplicados"
+
+    dup = df[df["referencia"].duplicated(keep=False)].sort_values("referencia")
+    print(len(dup))
+    print(dup[["referencia", "fecha", "adjudicatario", "precio", "objeto", "negociado"]])
+
+    """
+    Se obtienen 3 casos de duplicados (total 12 parejas):
+        1) Misma referencia con texto distinto en objeto o adjudicatario --> duplicados
+        2) Misma referencia e importe en diferente fecha --> duda
+        3) Misma referencia con importes y fechas distintos --> no duplicado
+    En este caso solo se van a eliminar los duplicados del tipo 1
+    """
+
+    df = df.sort_values("fecha")
+
+    duplicate = df[df.duplicated(subset=["referencia", "fecha", "precio"], keep="first")]
+    print(f"Duplicados eliminados: {len(duplicate)}")
+    print(duplicate["referencia", "fecha", "precio"])
+
+    # Eliminamos los duplicados del tipo 1 quedandonos con el primer registro
+    df = df.drop_duplicates(subset=["referencia", "fecha", "precio"], keep="first")
+
+    return df.sort_index()
+
 
 def clean_data(df):
 
@@ -157,6 +184,8 @@ def clean_data(df):
     df = clean_categories(df)
     print("Resto de columnas --> str mayusc.")
     print("---------------------------------------------")
+
+    df = clean_duplicates(df)
 
     return df
 
@@ -188,7 +217,9 @@ if __name__ == "__main__":
 
     df = transform()
 
-    print(df.iloc[77])
+    dup = df[df["referencia"].duplicated(keep=False)].sort_values("referencia")
+    print(len(dup))
+    print(dup[["referencia", "fecha", "adjudicatario", "precio", "objeto", "negociado"]])
 
    
 

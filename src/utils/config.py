@@ -20,6 +20,14 @@ def get_silver_path():
     BASE_DIR = get_base_dir()
     return BASE_DIR / "data" / "silver"
 
+def get_gold_path():
+    """
+    Obtiene la ruta de la carpeta 'gold' dentro del directorio de datos.
+    """
+    BASE_DIR = get_base_dir()
+    return BASE_DIR / "data" / "gold"
+
+
 def files_format():
     """
     Devuelve un diccionario con los formatos de archivos y sus funciones correspondientes.

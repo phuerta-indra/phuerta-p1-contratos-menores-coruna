@@ -1,11 +1,8 @@
 import pandas as pd
-from src.utils.config import get_silver_path
-import re
+from src.utils.config import get_silver_path, get_gold_path
+from src.utils.utils import read_csv, export_csv
 
-def explore():
-    file_path = get_silver_path()/"consolidated"/"contratos_menores_consolidados.csv"
-
-    df = pd.read_csv(file_path, encoding="utf-8-sig")
+def explore(df):
 
     print("\n--- PRIMERAS FILAS ---")
     pd.set_option("display.max_columns", None)
@@ -30,6 +27,9 @@ def explore():
     print("\n--- VALORES ÚNICOS ---")
     for column in df.columns:
         print(f"{column}: {df[column].nunique()} valores únicos")
+
+    print("\n--- DISTRIBUCIONES ---")
+    print(df.describe())
 
     print("---------------------------------------------")
 
@@ -57,22 +57,30 @@ def clean_prices(df):
         "22.209,07€ (2023). 31.882,29 € (2024)": "54.091,36"
     })
 
-    limpio = (
+    cleaned = (
         df["precio"]
-        .str.replace(".", "", regex=False)
-        .str.replace(",", ".", regex=False)
         .str.replace("€", "", regex=False)
     )
-    convertido = pd.to_numeric(limpio, errors="coerce")
+
+    # Para cambiar los precios con formato 1.234,56
+    eu_format = cleaned.str.contains(",", na=False)
+
+    cleaned.loc[eu_format] = (
+        cleaned.loc[eu_format]
+        .str.replace(".", "", regex=False)
+        .str.replace(",", ".", regex=False)
+    )
+
+    converted = pd.to_numeric(cleaned, errors="coerce")
 
     # Para identificar valores que pandas no ha podido convertir a número 
-    # (dos valore: 18.000,00 € y dos anualidades: 22.209,07€ (2023). 31.882,29 € (2024))
+    # (valores tipo: 18.000,00 € y dos anualidades: 22.209,07€ (2023). 31.882,29 € (2024))
 
-    fallidos = df.loc[convertido.isna() & df["precio"].notna(), "precio"]
+    fallidos = df.loc[converted.isna() & df["precio"].notna(), "precio"]
     print(f"Precios no convertibles: {len(fallidos)}")
     print(fallidos)
 
-    df["precio"] = convertido
+    df["precio"] = converted
 
     return df
 
@@ -84,7 +92,6 @@ def clean_dates(df):
     # Quitamos las horas de las fechas
     date = df["fecha"].str[:10]
 
-
     # Formato principal de las fechas en los datos obtenidos
 
     date_iso = pd.to_datetime(date, format="%Y-%m-%d", errors="coerce")
@@ -94,6 +101,23 @@ def clean_dates(df):
 
     # Si una falla nos quedamos con la otra
     convertido = date_iso.fillna(date_es)
+
+    # Hay una fecha con un año erroneo (2022 en vez de 2023), como las 
+    # referencias más proximas son del 2023 voy a corregir el año de la fecha
+    # en lugar de eliminar la fila. La referencia era: 237/2023/31
+
+    # Para ver las referencias proximas se puede ejecutar:
+    """fila = df[df["fecha"] < "2023-01-01"]
+    print(fila[["referencia", "fecha"]])
+    
+    prefijo = fila["referencia"].iloc[0].split("/")[0]
+    vecinos = df[df["referencia"].str.startswith(prefijo + "/2023/")].sort_values("referencia")
+    print(vecinos[["referencia", "fecha"]])"""
+
+    ref = "237/2023/31" 
+    mask = df["referencia"] == ref
+    convertido.loc[mask] = convertido.loc[mask] + pd.DateOffset(years=1)
+
 
     # Filas donde había un valor original pero ningún formato funcionó
     fallidos = df.loc[convertido.isna() & df["fecha"].notna(), "fecha"]
@@ -127,42 +151,44 @@ def clean_data(df):
     df = clean_text(df)
     print("Espacios corregidos")
     df = clean_prices(df)
-    print("Precios convertidos --> float64")
+    print(f"Precios convertidos --> {df["precio"].dtype}")
     df = clean_dates(df)
-    print("Fechas convertidas --> datetime")
+    print(f"Fechas convertidas --> {df["fecha"].dtype}")
     df = clean_categories(df)
     print("Resto de columnas --> str mayusc.")
+    print("---------------------------------------------")
 
     return df
 
 
+def transform():
+
+    "Aplica las transformaciones de las funciones anteriores"
+
+    SILVER_PATH = get_silver_path()
+    GOLD_PATH = get_gold_path()
+
+    file_path = SILVER_PATH/"consolidated"/"contratos_menores_consolidados.csv"
+
+    df = read_csv(file_path)
+    
+    df = clean_data(df)
+
+    df = explore(df)
+
+    output_dir = GOLD_PATH/"cleaned"/"contratos_menores_limpios.csv"
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+
+    #export_csv(df, output_dir)
+
+    return df
 
 
 if __name__ == "__main__":
 
+    df = transform()
 
-    df = clean_data(explore())
+    print(df.iloc[77])
 
+   
 
-    print("--------------------------------------")
-    print(df.head())
-    
-    print("\n--- DIMENSIONES ---")
-    print(f"Filas: {df.shape[0]}")
-    print(f"Columnas: {df.shape[1]}")
-    
-    print("\n--- TIPOS DE DATOS ---")
-    print(df.dtypes)
-    
-    print("\n--- VALORES NULOS ---")
-    print(df.isnull().sum())
-    
-    print("\n--- PORCENTAJE DE NULOS ---")
-    print((df.isnull().mean() * 100).round(2))
-    
-    print("\n--- REGISTROS DUPLICADOS ---")
-    print(df.duplicated().sum())
-    
-    print("\n--- VALORES ÚNICOS ---")
-    for column in df.columns:
-        print(f"{column}: {df[column].nunique()} valores únicos")

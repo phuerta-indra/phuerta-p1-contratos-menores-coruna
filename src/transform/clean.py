@@ -3,6 +3,9 @@ from src.utils.config import get_silver_path, get_gold_path
 from src.utils.utils import read_csv, export_csv
 
 
+#-------------------------------------------------------------
+# Función para explorar datos (antes o después de la limpieza)
+#-------------------------------------------------------------
 
 def explore(df):
 
@@ -36,6 +39,12 @@ def explore(df):
     print("---------------------------------------------")
 
     return df
+
+
+
+#-------------------------------------------------------------
+# Funciones para limpiar datos 
+#-------------------------------------------------------------
 
 
 
@@ -271,7 +280,7 @@ def clean_negociado(df):
 
 def clean_data(df):
 
-    "Limpieza de datos"
+    "Función principal para aplicar todas las limpiezas individuales"
 
     df = df.copy()
 
@@ -295,12 +304,18 @@ def clean_data(df):
 
     df = clean_negociado(df)
     print("Negociados actualizados")
-    
+
     print("---------------------------------------------")
 
     df = clean_duplicates(df)
 
     return df
+
+
+
+#---------------------------------------------------------------------
+# Función para ejecutar la limpieza y exportación de los datos limpios
+#---------------------------------------------------------------------
 
 
 

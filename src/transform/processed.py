@@ -1,5 +1,6 @@
 import pandas as pd
-from src.utils.config import get_base_dir, get_bronze_path, get_silver_path, files_format
+from src.utils.config import get_bronze_path, get_silver_path
+from src.utils.utils import files_format, export_csv
 
 
 #--------------------------------------------
@@ -96,7 +97,7 @@ def process_file():
         output_dir.parent.mkdir(parents=True, exist_ok=True) #Crea carpetas hasta el archivo
 
         # Exportar el CSV
-        df.to_csv(output_dir, index=False, encoding="utf-8-sig")
+        export_csv(df, output_dir)
 
         # Mensaje de procesamiento
         print(f"Procesado: {archivo.name} -> {output_dir}")

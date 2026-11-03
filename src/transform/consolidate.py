@@ -1,5 +1,6 @@
 import pandas as pd
 from src.utils.config import get_silver_path
+from src.utils.utils import export_csv
 
 
 #--------------------------------------------
@@ -49,7 +50,7 @@ def consolidate_files():
     df_consolidated = pd.concat(df_list, ignore_index=True)
 
     # Exportar el df consolidado
-    df_consolidated.to_csv(output_dir, index=False, encoding="utf-8-sig")
+    export_csv(df_consolidated, output_dir)
 
     # Mensajes de confirmación
     print(f"\nConsolidación completada.")

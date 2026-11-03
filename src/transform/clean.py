@@ -158,9 +158,10 @@ def clean_duplicates(df):
 
     "Función para gestionar valores duplicados"
 
-    dup = df[df["referencia"].duplicated(keep=False)].sort_values("referencia")
+    # Para ver los duplicados
+    """dup = df[df["referencia"].duplicated(keep=False)].sort_values("referencia")
     print(len(dup))
-    print(dup[["referencia", "fecha", "adjudicatario", "precio", "objeto", "negociado"]])
+    print(dup[["referencia", "fecha", "adjudicatario", "precio", "objeto", "negociado"]])"""
 
     """
     Se obtienen 3 casos de duplicados (total 12 parejas):
@@ -169,8 +170,6 @@ def clean_duplicates(df):
         3) Misma referencia con importes y fechas distintos --> no duplicado
     En este caso solo se van a eliminar los duplicados del tipo 1
     """
-
-    df = df.sort_values("fecha")
 
     duplicate = df[df.duplicated(subset=["referencia", "fecha", "precio"], keep="first")]
     print(f"Duplicados eliminados: {len(duplicate)}")
@@ -210,7 +209,7 @@ def clean_nif(df):
 
 
 
-def clean_adj(df):
+def clean_adjudicatario(df):
 
     "Unificar los nombres de los adjudicatarios según el NIF"
 
@@ -227,6 +226,49 @@ def clean_adj(df):
 
 
 
+def clean_negociado(df):
+
+    """
+    Separa el nombre del negociado y los unifica por código 
+    (los nombres de los negociados acaban con un codigo, si es que tienen)
+    """
+
+    # Vamos a codificar los nombres de la forma AA9999 con una letra mayuscula opcional
+    code = r"([A-Z]{2}\d{4}[A-Z]?)$"
+
+    # Limpiamos espacios
+    text = df["negociado"].str.replace(r"\s+", " ", regex=True).str.strip()
+
+    # Codificamos los negociados
+    df["negociado_cod"] = text.str.extract(code)[0]
+    name = text.str.replace(code, "", regex=True).str.strip() # Nombre del negociado sin espacios y sin codigo
+
+    # Nombre más frecuente de cada código los que no tienen codigo quedan NaN
+    common = name.groupby(df["negociado_cod"]).transform(lambda x: x.mode().iloc[0])
+    df["negociado"] = common.fillna(name) # Rellenamos los NaN con su nombre, ya que no hay codigo
+
+    # Unificación de los nogociados sin codigo, solo hay dos que se repiten con nombres diferentes
+    no_code = {
+        "ALCALDIA" : "ALCALDÍA",
+        "XESTIÓN ECONÓMICA URBANISMO" : "GESTION ECONOMICA URBANISMO"
+    }
+
+    df["negociado"] = df["negociado"].replace(no_code)
+
+    # Creamos una nueva columna clave_negociado para poder identificar a los 
+    # negociados según su codigo o nombre, si no tienen
+
+    df["clave_negociado"] = df["negociado_cod"].fillna(df["negociado"])
+
+    # Comprobaciones
+    print(f"Negociados sin código: {df['negociado_cod'].isna().sum()}")
+    print(f"Claves distintas: {df['clave_negociado'].nunique()}")
+    assert df.groupby("clave_negociado")["negociado"].nunique().max() == 1, "Una clave tiene más de un nombre"
+
+    return df
+
+
+
 def clean_data(df):
 
     "Limpieza de datos"
@@ -235,16 +277,25 @@ def clean_data(df):
 
     df = clean_text(df)
     print("Espacios corregidos")
+
     df = clean_nif(df)
     print("NIF corregidos")
+
     df = clean_prices(df)
     print(f"Precios convertidos --> {df["precio"].dtype}")
+
     df = clean_dates(df)
     print(f"Fechas convertidas --> {df["fecha"].dtype}")
+
     df = clean_categories(df)
     print("Resto de columnas --> str mayusc.")
-    df = clean_adj(df)
+
+    df = clean_adjudicatario(df)
     print("Nombres de los adjudicatarios actualizados")
+
+    df = clean_negociado(df)
+    print("Negociados actualizados")
+    
     print("---------------------------------------------")
 
     df = clean_duplicates(df)
@@ -266,12 +317,12 @@ def transform():
     
     df = clean_data(df)
 
-    #df = explore(df)
+    df = explore(df)
 
     output_dir = GOLD_PATH/"cleaned"/"contratos_menores_limpios.csv"
     output_dir.parent.mkdir(parents=True, exist_ok=True)
 
-    #export_csv(df, output_dir)
+    export_csv(df, output_dir)
 
     return df
 
@@ -280,6 +331,7 @@ def transform():
 if __name__ == "__main__":
 
     df = transform()
+    
 
     
 

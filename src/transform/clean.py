@@ -9,6 +9,8 @@ from src.utils.utils import read_csv, export_csv
 
 def explore(df):
 
+    print("---------------------------------------------")
+
     print("\n--- PRIMERAS FILAS ---")
     pd.set_option("display.max_columns", None)
     print(df.head())
@@ -329,6 +331,10 @@ def transform_files():
     file_path = SILVER_PATH/"consolidated"/"contratos_menores_consolidados.csv"
 
     df = read_csv(file_path)
+
+    print ("ANTES DE LIMPIEZA DE DATOS")
+
+    df = explore(df)
     
     df = clean_data(df)
 

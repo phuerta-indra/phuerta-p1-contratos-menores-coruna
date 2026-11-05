@@ -86,6 +86,18 @@ def clean_categories(df):
 
 
 
+def clean_type(df):
+    """
+    Cambia el valor de los tipos de contratos O a Z
+    Interpretando que la O se refiere tambien a otros tipos de contratos
+    """
+
+    df["tipo_contrato"] = df["tipo_contrato"].replace("O", "Z")
+
+    return df
+
+
+
 def clean_prices(df):
 
     "Convertir los precios a dato numérico"
@@ -304,6 +316,9 @@ def clean_data(df):
 
     df = clean_categories(df)
     print("Resto de columnas --> str mayusc.")
+
+    df = clean_type(df)
+    print("Se han cambiado las O --> Z")
 
     df = clean_adjudicatario(df)
     print("Nombres de los adjudicatarios actualizados")

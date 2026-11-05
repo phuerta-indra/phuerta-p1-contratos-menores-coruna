@@ -320,29 +320,6 @@ def clean_data(df):
 
 
 #---------------------------------------------------------------------
-# Funciones para añadir información a las dimensiones
-#---------------------------------------------------------------------
-
-
-
-def classify_nif(nif):
-
-    "Clasifica el nif en: persona física, formato español y formato extranjero"
-
-    if pd.isna(nif):
-        return "desconocido"
-
-    if "*" in nif:
-        return "persona física"
-
-    if re.fullmatch(r"[A-Z]\d{8}", nif):
-        return "formato español"
-
-    return "formato extranjero u otro identificador"
-
-
-
-#---------------------------------------------------------------------
 # Función para ejecutar la limpieza y exportación de los datos limpios
 #---------------------------------------------------------------------
 

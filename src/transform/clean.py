@@ -1,11 +1,15 @@
 import pandas as pd
 from src.utils.config import get_silver_path, get_gold_path
 from src.utils.utils import read_csv, export_csv
+import re
+
 
 
 #-------------------------------------------------------------
 # Función para explorar datos (antes o después de la limpieza)
 #-------------------------------------------------------------
+
+
 
 def explore(df):
 
@@ -312,6 +316,29 @@ def clean_data(df):
     df = clean_duplicates(df)
 
     return df
+
+
+
+#---------------------------------------------------------------------
+# Funciones para añadir información a las dimensiones
+#---------------------------------------------------------------------
+
+
+
+def classify_nif(nif):
+
+    "Clasifica el nif en: persona física, formato español y formato extranjero"
+
+    if pd.isna(nif):
+        return "desconocido"
+
+    if "*" in nif:
+        return "persona física"
+
+    if re.fullmatch(r"[A-Z]\d{8}", nif):
+        return "formato español"
+
+    return "formato extranjero u otro identificador"
 
 
 

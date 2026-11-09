@@ -24,6 +24,9 @@
         - [Negociado](#negociado)
       - [Ejecución de la limpieza](#ejecución-de-la-limpieza)
     - [Ejecución del proceso ETL](#ejecución-del-proceso-etl)
+  - [Modelado de datos](#modelado-de-datos)
+    - [Arquitectura Medallion](#arquitectura-medallion)
+    - [Modelo de Estrella](#modelo-de-estrella)
 
 ## Introducción
 
@@ -181,6 +184,46 @@ Con la función `transform_files()` se ejecutan las funciones de exploración y 
 
 Para ejecutar el proceso de ETL se crea una función `launcher()` que se importa al fichero `src/main.py` para que al ejecutar este script se ejecute todo el programa.
 
+
+## Modelado de datos
+
+### Arquitectura Medallion
+
+Como se ha ido revelando a lo largo de la limpieza de datos, el proyecto sigue una arquitectura medallion para separar el estado de los datos en diferentes niveles (bronze, silver y gold).
+
+![Diagrama de la arquitectura medallion](img/ArquitecturaMedallion.png)
+
+Los datos que se guardan en la capa bronze se corresponden a los datos en bruto tal y como llegan del origen. El objetivo de esta capa es poder guardar un backup de los datos originales y tener trazabilidad de como se van transformando los datos
+
+A lo largo de la capa silver se guardan los datos en dos bloque principales:
+
+1) Un bloque destinado a la normalización del estilo para los formatos. Donde se guardan los mismos datos, pero con el mismo formato.
+
+2) Un bloque para unificar todos esos archivos en uno único, gracias a que primero normalizamos los formatos a un estilo estándar. Esto facilita la limpieza evitando recorrer archivo por archivo.
+
+Finalmente llegamos a la capa gold, donde se almacenan los datos listos para su modelado en Snowflake y posterior análisis en PowerBi.
+
+
+### Modelo de Estrella
+
+La estructura elegida para el modelado de las tablas relacionales es el modelo en estrella. Con esta estructura se diferencia la tabla de hechos y las dimensiones que aportan contexto.
+
+![Diagrama de la arquitectura medallion](img/ModeladoEstrella.png)
+
+La tabla de hechos `FACT_CONTRATOS` tiene una fila por contrato y contiene la referencia, el precio y las claves foráneas a las dimensiones.
+
+Las dimensiones describen los principales atributos usados para analizar los contratos:
+
+- `DIM_FECHA`: fecha, año, trimestre y mes.
+- `DIM_TIPO_CONTRATO`: tipo de contrato.
+- `DIM_ADJUDICATARIO`: nombre, NIF y tipo del adjudicatario.
+- `DIM_NEGOCIADO`: negociado, código y clave del negociado.
+
+Cada clave foránea de `FACT_CONTRATOS` se relaciona con la clave primaria de su dimensión correspondiente. Esto permite analizar el número y el importe de los contratos por periodo, tipo, adjudicatario o negociado.
+
+El modelo se crea mediante los scripts SQL de `sql/modeling/`. La tabla limpia se carga primero en `CONTRATOS_STAGING` y se usa como origen para construir las dimensiones y la tabla de hechos.
+
+**Granularidad:** una fila por registro de contrato.  
 
 
 

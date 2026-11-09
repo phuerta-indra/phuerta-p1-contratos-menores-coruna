@@ -1,11 +1,15 @@
 import pandas as pd
 from src.utils.config import get_silver_path, get_gold_path
 from src.utils.utils import read_csv, export_csv
+import re
+
 
 
 #-------------------------------------------------------------
 # Función para explorar datos (antes o después de la limpieza)
 #-------------------------------------------------------------
+
+
 
 def explore(df):
 
@@ -77,6 +81,18 @@ def clean_categories(df):
     df["objeto"] = df["objeto"].str.upper()
     df["adjudicatario"] = df["adjudicatario"].str.upper()
     df["negociado"] = df["negociado"].str.upper()
+
+    return df
+
+
+
+def clean_type(df):
+    """
+    Cambia el valor de los tipos de contratos O a Z
+    Interpretando que la O se refiere tambien a otros tipos de contratos
+    """
+
+    df["tipo_contrato"] = df["tipo_contrato"].replace("O", "Z")
 
     return df
 
@@ -300,6 +316,9 @@ def clean_data(df):
 
     df = clean_categories(df)
     print("Resto de columnas --> str mayusc.")
+
+    df = clean_type(df)
+    print("Se han cambiado las O --> Z")
 
     df = clean_adjudicatario(df)
     print("Nombres de los adjudicatarios actualizados")

@@ -99,11 +99,11 @@ las obras será más fácil que el gasto total sea alto con pocos contratos.
 -- 4.1) Contratos que superan el límite de precio:
 
 
-SELECT TC.TIPO_CONTRATO, COUNT(C.REFERENCIA) AS N_CONTRATOS, ROUND(AVG(C.PRECIO), 2) - TC.UMBRAL AS IMPORTE_EXTRA
+SELECT TC.TIPO_CONTRATO, COUNT(C.REFERENCIA) AS N_CONTRATOS, ROUND(AVG(C.PRECIO), 2) - (TC.UMBRAL * 1.21) AS IMPORTE_EXTRA
 FROM MODELING.FACT_CONTRATOS AS C
 LEFT JOIN MODELING.DIM_TIPO_CONTRATO AS TC
 ON TC.PK_TIPO_CONTRATO = FK_TIPO_CONTRATO
-WHERE PRECIO > UMBRAL
+WHERE PRECIO > (UMBRAL * 1.21)
 GROUP BY TC.TIPO_CONTRATO, TC.UMBRAL
 ORDER BY TC.TIPO_CONTRATO
 
@@ -116,13 +116,16 @@ El exceso medio por encima del umbral es de: 6322.46 euros para los contratos de
 los servicios, 2409.34 euros para suministros y 2961.43 euros para otro tipo de contratos. Comparando estos valores,
 se obtiene que en cualquier caso tanto para contratos con limite de 40000 euros como para los que tienen 15000 euros
 de límite, el exceso medio que los supera es de alrededor un 16% aproximadamente.
+
+CORRECCIÓN: El precio asignado a cada contrato incluye IVA, mientras que el umbral no. Ajustando estos parámetros
+el resultado es que solamente 3 contratos superan esa barrera uno de obras, otro de servicios y otro de suministros
 */
 
 
--- 4.2) Contratos cercanos al umbral legal >= 95%:
+-- 4.2) Contratos cercanos al umbral legal (>= 95%):
 
 
-SELECT C.REFERENCIA, ADJ.ADJUDICATARIO, N.NEGOCIADO, C.PRECIO, ROUND(C.PRECIO / TC.UMBRAL * 100, 2) AS PCT_UMBRAL
+SELECT C.REFERENCIA, ADJ.ADJUDICATARIO, N.NEGOCIADO, C.PRECIO, ROUND(C.PRECIO / (TC.UMBRAL * 1.21) * 100, 2) AS PCT_UMBRAL
 FROM MODELING.FACT_CONTRATOS AS C
 LEFT JOIN MODELING.DIM_ADJUDICATARIO AS ADJ
 ON ADJ.PK_ADJUDICATARIO = C.FK_ADJUDICATARIO
@@ -130,12 +133,12 @@ LEFT JOIN MODELING.DIM_NEGOCIADO AS N
 ON N.PK_NEGOCIADO = C.FK_NEGOCIADO
 LEFT JOIN MODELING.DIM_TIPO_CONTRATO AS TC
 ON TC.PK_TIPO_CONTRATO = C.FK_TIPO_CONTRATO
-WHERE 95 <= PCT_UMBRAL <= 100
+WHERE PCT_UMBRAL >= 95 AND PCT_UMBRAL <= 100
 ORDER BY PCT_UMBRAL DESC
 
 
 /*
-En este rango hay un total de 63 resultados, de los cuales 6 coinciden con el tope máximo definido.
+En este rango hay un total de 324 resultados, de los cuales 29 coinciden con el tope máximo definido.
 */
 
 -- Caso a estudiar a futuro: PALACIO EDREIRA , FERNANDO (3 contratos por el mismo importe 96,8% cerca del umbral)

@@ -5,6 +5,7 @@
 - [Análisis de las Contrataciones Menores Ayuntamiento de A Coruña](#análisis-de-las-contrataciones-menores-ayuntamiento-de-a-coruña)
   - [Índice](#índice)
   - [Introducción](#introducción)
+  - [Estructura del proyecto](#estructura-del-proyecto)
   - [Proceso ETL](#proceso-etl)
     - [Obtención de los datos](#obtención-de-los-datos)
     - [Contexto incial de los datos](#contexto-incial-de-los-datos)
@@ -27,16 +28,54 @@
   - [Modelado de datos](#modelado-de-datos)
     - [Arquitectura Medallion](#arquitectura-medallion)
     - [Modelo de Estrella](#modelo-de-estrella)
+  - [Limitación de los datos](#limitación-de-los-datos)
+  - [Hallazgos](#hallazgos)
+    - [Hallazgo 1: Contrato fuera de periodo](#hallazgo-1-contrato-fuera-de-periodo)
+    - [Hallazgo 2: Contrato plurianual en el mismo registro](#hallazgo-2-contrato-plurianual-en-el-mismo-registro)
+    - [Hallazgo 3: Umbral sin IVA](#hallazgo-3-umbral-sin-iva)
+  - [Mejoras futuras](#mejoras-futuras)
 
 ## Introducción
 
 Este proyecto desarrolla una pipeline end-to-end de los datos sobre contrataciones menores en el Ayuntamiento de A Coruña en el periodo 2023-2026. El proyecto aborda desde la extracción, limpieza y carga de los datos (proceso ETL) hasta el modelado en Snowflake y su análisis con PowerBi.
 
+## Estructura del proyecto
+
+```
+contratos-menores/
+├── data/
+│   ├── bronze/               # Datos en bruto (raw)
+│   │   ├── 2023/         
+│   │   ├── 2024/
+│   │   ├── 2025/
+│   │   └── 2026/
+│   ├── gold/                 # Datos limpios
+│   │   └── cleaned/           
+│   └── silver/               
+│       ├── 2023/
+│       ├── 2024/
+│       ├── 2025/
+│       ├── 2026/
+│       └── consolidated/     # Datos en un solo archivo
+├── img/                      # Imágenes para el readme
+├── powerbi/                  # Dashboard negocio
+├── sql/
+│   ├── modeling/
+│   │   ├── dimensions/       # Queries para dimensiones
+│   │   └── facts/            # Query para hechos
+│   └── query/                # Queries de análisis
+└── src/
+    ├── extract/              # Script extracción automática
+    ├── load/                 # Script conexión Snowflake
+    ├── transform/            # Script limpieza
+    └── utils/                # Funciones auxiliares
+```
+
 ## Proceso ETL
 
 ### Obtención de los datos
 
-Los datos se han descargado manualmente a través del portal de la administración pública
+Los datos se han descargado manualmente a través del portal de la administración pública, ya que es el organismo oficial. [Este enlace](https://www.coruna.gal/transparencia/es/claridad-en-la-gestion/contratacion/contratos-menores) lleva al portal donde se publican los datos con los registros. El periodo seleccionado es del 2023 al 2026.
 
 ### Contexto incial de los datos
 
@@ -225,13 +264,80 @@ El modelo se crea mediante los scripts SQL de `sql/modeling/`. La tabla limpia s
 
 **Granularidad:** una fila por registro de contrato.  
 
+## Limitación de los datos
+
+La principal limitación de los datos que proporciona la administración pública es que tienen poco contexto para poder obtener conclusiones sólidas. Por ejemplo, no se indica el motivo de cada contrato ni si está sujeto a alguna excepción normativa. Esta falta de información dificulta valorar adecuadamente los datos, comparar los casos entre sí o identificar posibles patrones.
+
+## Hallazgos
+
+### Hallazgo 1: Contrato fuera de periodo
+
+Al hacer la limpieza y normalización de los datos, he encontrado un contrato que se encuentra fuera del periodo que se está estudiando, más concretamente es del 2022.
+
+Para ver los contratos que están fuera de rango se puede ejecutar la siguiente línea de código:
+
+```
+fuera_de_rango = df[df["fecha"] < "2023-01-01"]
+print(fuera_de_rango[["referencia", "fecha"]])
+```
+
+Ejecutándolo, antes de aplicar la función de normalización `clean_dates()` se obtienen los siguientes registros:
+
+| N.º | Referencia | Fecha |
+|---:|---|---|
+| 77 | `237/2023/31` | 2022-03-14 |
+| 349 | `211/2023/284` | 07/03/2023 |
+| 371 | `211/2023/10` | 07/03/2023 |
+| 378 | `211/2023/281` | 02/03/2023 |
+| 379 | `211/2023/288` | 07/03/2023 |
+| 563 | `CI1/2023/143` | 08/03/2023 |
+| 570 | `CI1/2023/134` | 06/03/2023 |
+| 711 | `000/2023/65` | 05/05/2023 |
+| 713 | `000/2023/67` | 15/05/2023 |
+| 1157 | `GA2/2023/28` | 10/04/2023 |
+| 1158 | `GA2/2023/35` | 06/06/2023 |
+| 4205 | `000/2024/102` | 09/10/2024 |
+| 4207 | `000/2024/114` | 05/11/2024 |
+| 4211 | `000/2024/124` | 13/11/2024 |
+| 4212 | `000/2024/125` | 18/11/2024 |
+| 4214 | `000/2024/131` | 20/11/2024 |
+| 4216 | `000/2024/136` | 09/12/2024 |
+
+La razón por la que aparecen tantos registros es porque las fechas no están normalizadas al mismo formato. Sin embargo, eso no impiede identificar el registro que se sale de rango: `237/2023/31`.
+
+El contrato se adjudicó en el 2022, pero la referencia parece indicar que se adjudicó en 2023 ya que el valor central corresponde al año. Esto puede indicar a que se ha podido cometer un error al registrar la fecha en el fichero. Analizando los contratos con referencias cercanas, es decir `237/2023/xx`, se obtienen los siguientes registros:
+
+| referencia | fecha |
+|---|---|
+| 237/2023/10 | 2023-01-17 00:00:00 |
+| 237/2023/106 | 2023-03-13 00:00:00 |
+| 237/2023/108 | 2023-03-16 00:00:00 |
+| 237/2023/109 | 2023-03-16 00:00:00 |
+| 237/2023/11 | 2023-01-19 00:00:00 |
+| 237/2023/62 | 2023-03-06 00:00:00 |
+| 237/2023/7 | 2023-01-17 00:00:00 |
+| 237/2023/72 | 2023-03-06 00:00:00 |
+| 237/2023/8 | 2023-01-17 00:00:00 |
+| 237/2023/9 | 2023-01-17 00:00:00 |
+
+Esta es la razón por la que finalmente he decidido interpretar este desajuste como un fallo humano al realizar el registro del contrato.
+
+### Hallazgo 2: Contrato plurianual en el mismo registro
+
+Como se mencionó en la sección de [limpieza de datos](#conversión-de-tipo-de-dato-numérico), se obtiene un registro en el que el importe es el siguiente:  `22.209,07€ (2023). 31.882,29 € (2024)`. Por lo que parece es un contrato que se extiende a dos años (plurianual), ya que los contratos periódicos aparecen con diferente referencia al ser contratos independientes. En este caso se ha combinado el importe en un único registro en lugar de separarlos en dos contratos con la misma referencia.
+
+### Hallazgo 3: Umbral sin IVA
+
+Durante el análisis con las consultas SQL y a través de los gráficos de PowerBI, estaba comparando los importes de los contratos, que incluyen el IVA, con los umbrales, que no los incluían. De esta forma obtenía una cantidad considerable de contratos por encima del límite legal, me llamó la atención pero lo deje pasar. 
+
+Hasta que analizando determinados contratos en el dashboard de PowerBI, identifique varios contratos que se paraban cerca de un valor, como si hubiese una resistencia sobre el que estos contratos ajustaban sus valores.
+
+Para los contratos de obra eran más o menos ```48.000€``` y para los demás ```18.000€```, lo que venía siendo aproximadamente un ```20%```. Ahí ya me di cuenta de que los umbrales no incluyen IVA , confirmandolo con esta [página web](https://contratos.gobierto.es/preguntas/x191wtsc).
 
 
+## Mejoras futuras
 
-
-
-
-
+La principal mejora que haría con más tiempo sería completar la automatización de todo el proceso ETL: para la extracción de datos se puede valorar la conexión a alguna API oficial que proporcione los datos requeridos, sino se puede optar por un scrappeo del portal oficial, siempre y cuando no se incumpla ninguna normativa. En cuanto a la conexión con Snowflake para la carga de datos, esto se puede hacer a través de la librería de python `snowflake-connector-python`.
 
 
 

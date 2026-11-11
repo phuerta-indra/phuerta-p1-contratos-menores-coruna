@@ -64,18 +64,24 @@ contratos-menores/
 │   │   ├── dimensions/       # Queries para dimensiones
 │   │   └── facts/            # Query para hechos
 │   └── query/                # Queries de análisis
-└── src/
-    ├── extract/              # Script extracción automática
-    ├── load/                 # Script conexión Snowflake
-    ├── transform/            # Script limpieza
-    └── utils/                # Funciones auxiliares
+├── src/
+│   ├── extract/              # Script extracción automática
+│   ├── load/                 # Script conexión Snowflake
+│   ├── transform/            # Script limpieza
+│   └── utils/                # Funciones auxiliares
+└── requirements.txt          # Fichero de dependencias
 ```
 
 ## Proceso ETL
 
 ### Obtención de los datos
 
-Los datos se han descargado manualmente a través del portal de la administración pública, ya que es el organismo oficial. [Este enlace](https://www.coruna.gal/transparencia/es/claridad-en-la-gestion/contratacion/contratos-menores) lleva al portal donde se publican los datos con los registros. El periodo seleccionado es del 2023 al 2026.
+Los datos se han descargado manualmente a través del portal de la administración pública, ya que es el organismo oficial. [Este enlace](https://www.coruna.gal/transparencia/es/claridad-en-la-gestion/contratacion/contratos-menores) lleva al portal donde se publican los datos con los registros:
+
+ + **Organismo:** Ayuntamiento de A Coruña
+ + **Portal de descarga:** [link](https://www.coruna.gal/transparencia/es/claridad-en-la-gestion/contratacion/contratos-menores) 
+ + **Periodo:** 2023 - 2026 (Primer trimestre)
+ + **Formato ficheros:** archivos de LibreOffice (.ods)
 
 ### Contexto incial de los datos
 

@@ -141,8 +141,6 @@ ORDER BY PCT_UMBRAL DESC
 En este rango hay un total de 324 resultados, de los cuales 29 coinciden con el tope máximo definido.
 */
 
--- Caso a estudiar a futuro: PALACIO EDREIRA , FERNANDO (3 contratos por el mismo importe 96,8% cerca del umbral)
-
 
 -- 4.2) Estacionalidad de los contratos:
 
@@ -161,16 +159,4 @@ y un gasto total de 2,96 millones de euros. El mes de octubre, es el segundo mes
 y concentra un mayor gasto que noviembre: 3,47 millones de euros. En agosto se encuentra el mínimo de contrataciones,
 coincidiendo con el parón de vacaciones.
 */
-
-
-
-
-
-
-
-
--- 4.2) Adjudicatarios que más aparecen por tipo de contrato:
-
-
--- 4.3) Las empresas con más gasto son las que más contratos tienen?
 

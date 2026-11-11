@@ -72,6 +72,10 @@ contratos-menores/
 └── requirements.txt          # Fichero de dependencias
 ```
 
+Para ejecutar el proyecto es necesario instalar los paquetes de dependencias usando el siguiente comando:
+
+`pip install -r requirements.txt`
+
 ## Proceso ETL
 
 ### Obtención de los datos

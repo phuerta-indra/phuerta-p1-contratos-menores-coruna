@@ -8,7 +8,7 @@ SELECT
         WHEN 'E' THEN 'Suministros'
         WHEN 'Z' THEN 'Otros'
     END AS DESCRIPCION_TIPO_CONTRATO,
-    CASE UMBRAL
+    CASE TIPO_CONTRATO
         WHEN 'A' THEN 40000
         WHEN 'C' THEN 15000
         WHEN 'E' THEN 15000

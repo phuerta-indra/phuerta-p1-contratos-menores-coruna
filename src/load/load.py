@@ -15,6 +15,7 @@ from pandas.api.types import (
 BASE_DIR = get_base_dir()
 GOLD_DIR = get_gold_path()
 
+
 SCHEMA = 'STAR'
 TABLE = 'CONTRATOS_MENORES_AUTO'
 
@@ -72,29 +73,61 @@ def create_table(conn, types, table):
 
     db = os.environ['SNOWFLAKE_DATABASE']
 
-    schema = f'"{db}"."{SCHEMA}"'
+    qualified_schema = f'"{db}"."{SCHEMA}"'
+    qualified_table = f'{qualified_schema}."{table}"'
 
     table_columns = ", ".join(
-        f'"{col}" {type}' for col, type in types.items()
+        f'"{col}" {snowflake_type}'
+        for col, snowflake_type in types.items()
     )
 
-    query = f'CREATE TABLE IF NOT EXISTS {table} ({table_columns})'
+    with conn.cursor() as cur:
+        cur.execute(f"CREATE SCHEMA IF NOT EXISTS {qualified_schema}")
 
-    cur = conn.cursor()
+        # Crea la tabla si todavía no existe.
+        cur.execute(
+            f"CREATE TABLE IF NOT EXISTS {qualified_table} ({table_columns})"
+        )
 
-    try:
-        cur.execute(f'CREATE SCHEMA IF NOT EXISTS {schema};')
-        cur.execute(f'TRUNCATE TABLE IF EXISTS {table}')
-    finally:
-        pass
+        # Si quieres vaciarla en cada ejecución, conserva esta línea.
+        cur.execute(f"TRUNCATE TABLE IF EXISTS {qualified_table}")
 
-    cur.execute(query)
-
-    print('Tabla creada correctamente')
+    print("Tabla creada correctamente")
 
     cur.close()
 
     return
+
+
+
+def copy_data(conn):
+
+    db = os.environ['SNOWFLAKE_DATABASE']
+
+    csv_path = (GOLD_DIR / 'cleaned' / 'contratos_menores_limpios.csv').resolve()
+    stage = f'"{db}"."{SCHEMA}"."CSV_STAGE"'
+    target = f'"{db}"."{SCHEMA}"."{TABLE}"'
+
+    with conn.cursor() as cur:
+        cur.execute(f"CREATE STAGE IF NOT EXISTS {stage}")
+
+        print('Stage creado')
+
+        cur.execute(
+            f"PUT 'file://{csv_path.as_posix()}' @{stage} "
+            "AUTO_COMPRESS=TRUE OVERWRITE=TRUE"
+        )
+
+        print('Fichero .csv subido correctamente')
+
+        cur.execute(f"""
+            COPY INTO {target}
+            FROM {stage}
+        """)
+
+        print(f'Datos copiados en la tabla: {target}')
+
+        print(cur.fetchall())
 
 
 
@@ -106,6 +139,9 @@ def load_data(df):
 
     create_table(conn, types, TABLE)
 
+    # Error por inspección SSL o configuración del proxy (mismo error que al usar write_pandas)
+    copy_data(conn)
+
     return
 
 
@@ -116,8 +152,5 @@ if __name__ == '__main__':
     df = pd.read_csv(GOLD_DIR / 'cleaned' / 'contratos_menores_limpios.csv')
     df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
 
-    conn = connect()
+    load_data(df)
 
-    types = data_types(df)
-
-    create_table(conn, types, TABLE)

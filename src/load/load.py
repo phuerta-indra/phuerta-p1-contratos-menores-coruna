@@ -15,6 +15,7 @@ from pandas.api.types import (
 BASE_DIR = get_base_dir()
 GOLD_DIR = get_gold_path()
 
+SCHEMA = 'STAR'
 TABLE = 'CONTRATOS_MENORES_AUTO'
 
 
@@ -31,7 +32,7 @@ def connect():
         'role' : os.environ['SNOWFLAKE_ROLE'],
         'warehouse' : os.environ['SNOWFLAKE_WAREHOUSE'],
         'database' : os.environ['SNOWFLAKE_DATABASE'],
-        'schema' : os.environ['SNOWFLAKE_SCHEMA']
+        #'schema' : os.environ['SNOWFLAKE_SCHEMA']
     }
 
     
@@ -69,6 +70,10 @@ def data_types(df):
 
 def create_table(conn, types, table):
 
+    db = os.environ['SNOWFLAKE_DATABASE']
+
+    schema = f'"{db}"."{SCHEMA}"'
+
     table_columns = ", ".join(
         f'"{col}" {type}' for col, type in types.items()
     )
@@ -78,6 +83,7 @@ def create_table(conn, types, table):
     cur = conn.cursor()
 
     try:
+        cur.execute(f'CREATE SCHEMA IF NOT EXISTS {schema};')
         cur.execute(f'TRUNCATE TABLE IF EXISTS {table}')
     finally:
         pass

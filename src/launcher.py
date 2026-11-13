@@ -1,6 +1,7 @@
 from src.transform.processed import process_file
 from src.transform.consolidate import consolidate_files
 from src.transform.clean import transform_files
+from src.load.load import load_data
 
 
 def launcher():
@@ -14,5 +15,8 @@ def launcher():
     consolidate_files()
 
     # Ejecuta la función que se encarga de la limpieza y normalización de los datos
-    transform_files()
+    df = transform_files()
+
+    # Ejecuta la función para cargar los datos en una tabla de Snowflake
+    load_data(df)
 

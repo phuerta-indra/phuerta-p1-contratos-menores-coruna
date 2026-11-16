@@ -28,6 +28,7 @@
         - [Negociado](#negociado)
       - [Ejecución de la limpieza](#ejecución-de-la-limpieza)
     - [Ejecución del proceso ETL](#ejecución-del-proceso-etl)
+    - [Carga de datos en Snowflake](#carga-de-datos-en-snowflake)
   - [Modelado de datos](#modelado-de-datos)
     - [Arquitectura Medallion](#arquitectura-medallion)
     - [Modelo de Estrella](#modelo-de-estrella)
@@ -264,6 +265,13 @@ Con la función `transform_files()` se ejecutan las funciones de exploración y 
 
 Para ejecutar el proceso de ETL se crea una función `launcher()` que se importa al fichero `src/main.py` para que al ejecutar este script se ejecute todo el programa.
 
+### Carga de datos en Snowflake
+
+En el script `src/load/load.py` se ubican las funciones para la conexión con Snowflake. El primer paso es crear y rellenar un archivo `.env` y rellenarlo siguiendo el formato de ejemplo de `.env_example.txt` con las credenciales propias de Snowflake.
+
+La función `connect()` crea la conexión con Snowflake y con la función `create_table()` se crea una tabla vacía en el esquema indicado.
+
+**Error persistente en la carga de datos:** al intentar insertar los datos dentro de la tabla creada, da un error de certificados SSL. Se intentó insertar los datos mediante la función `write_pandas()` y mediante el comando de sql de Snowflake `PUT` para subir el archivo al stage y desde ahí hacer un `COPY`.
 
 ## Modelado de datos
 

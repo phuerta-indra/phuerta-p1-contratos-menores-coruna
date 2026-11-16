@@ -10,41 +10,16 @@ from pandas.api.types import (
     is_float_dtype,
     is_integer_dtype,
 )
+from src.utils.utils import connect
 
 
 BASE_DIR = get_base_dir()
 GOLD_DIR = get_gold_path()
 
 
-SCHEMA = 'STAR'
+SCHEMA = 'ANALYTICS'
 TABLE = 'CONTRATOS_MENORES_AUTO'
 
-
-
-
-def connect():    
-
-    load_dotenv(BASE_DIR / '.env')
-
-    CONNEXION_PARAMS = {
-        'user' : os.environ['SNOWFLAKE_USER'],
-        'password' : os.environ['SNOWFLAKE_PASSWORD'],
-        'account' : os.environ['SNOWFLAKE_ACCOUNT'],
-        'role' : os.environ['SNOWFLAKE_ROLE'],
-        'warehouse' : os.environ['SNOWFLAKE_WAREHOUSE'],
-        'database' : os.environ['SNOWFLAKE_DATABASE'],
-        #'schema' : os.environ['SNOWFLAKE_SCHEMA']
-    }
-
-    
-    try:
-        conn = snowflake.connector.connect(**CONNEXION_PARAMS)
-        print('Se ha conectado a Snowflake')
-
-    except snowflake.connector.errors.OperationalError as e:
-        print(f"OperationalError: {e}")
-
-    return conn
 
 
 

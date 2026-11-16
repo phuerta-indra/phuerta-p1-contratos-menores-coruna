@@ -1,5 +1,8 @@
 import pandas as pd
-from src.utils.config import get_bronze_path
+from src.utils.config import get_bronze_path, get_base_dir
+import snowflake.connector
+from dotenv import load_dotenv
+import os
 
 
 def read_csv(path):
@@ -39,3 +42,28 @@ def files_format():
             format[relative_path] = "set_headers_format_1"
 
     return format
+
+def connect():
+
+    BASE_DIR = get_base_dir() 
+
+    load_dotenv(BASE_DIR / '.env')
+
+    CONNEXION_PARAMS = {
+        'user' : os.environ['SNOWFLAKE_USER'],
+        'password' : os.environ['SNOWFLAKE_PASSWORD'],
+        'account' : os.environ['SNOWFLAKE_ACCOUNT'],
+        'role' : os.environ['SNOWFLAKE_ROLE'],
+        'warehouse' : os.environ['SNOWFLAKE_WAREHOUSE'],
+        'database' : os.environ['SNOWFLAKE_DATABASE'],
+        'schema' : os.environ['SNOWFLAKE_SCHEMA']
+    }
+
+    
+    try:
+        conn = snowflake.connector.connect(**CONNEXION_PARAMS)
+        print("Se ha conectado a Snowflake")
+        return conn
+    except snowflake.connector.errors.Error as e:
+        print(f"No se pudo conectar a Snowflake: {e}")
+        return None

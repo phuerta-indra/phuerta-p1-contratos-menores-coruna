@@ -33,6 +33,14 @@ Relaciones: FACT_CONTRATOS.FK_xxx = DIM_xxx.PK_xxx. Usa siempre nombres completo
 - Si la pregunta no se puede responder con estas tablas, responde exactamente: NO_DISPONIBLE
 - Compara textos con ILIKE o con UPPER() cuando filtres por valores escritos por el usuario.
 
+## Interpretación de preguntas:
+- “gasto”, “importe acumulado” o “total gastado” significa SUM(FACT_CONTRATOS.PRECIO).
+- “ranking de los N” significa agrupar por la entidad solicitada,
+  ordenar la suma de mayor a menor y usar LIMIT N.
+- Para identificar el negociado, une FACT_CONTRATOS con DIM_NEGOCIADO:
+  FACT_CONTRATOS.FK_NEGOCIADO = DIM_NEGOCIADO.PK_NEGOCIADO.
+- El nombre que se muestra es DIM_NEGOCIADO.NEGOCIADO.
+
 ## Ejemplos
 Pregunta: ¿Cuántos contratos y qué importe total hay por año?
 SQL: SELECT f.ANHO, COUNT(*) AS N_CONTRATOS, ROUND(SUM(c.PRECIO), 2) AS IMPORTE

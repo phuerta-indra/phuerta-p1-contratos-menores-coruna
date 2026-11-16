@@ -33,6 +33,9 @@ def generate_sql(question, schema):
                 "Usa solo las tablas y columnas del esquema proporcionado. "
                 "Devuelve únicamente una sentencia SELECT, sin Markdown ni explicaciones. "
                 "No inventes nombres de tablas o columnas."
+                "Reglas de negocio: en DIM_TIPO_CONTRATO, UMBRAL está expresado sin IVA; "
+                "en FACT_CONTRATOS, PRECIO incluye IVA. No compares ambos importes "
+                "como si estuvieran en la misma base imponible."
             ),
         },
         {
@@ -106,19 +109,22 @@ def explain_results(question, results):
     return response["message"]["content"].strip()
 
 
-
-
-if __name__ == '__main__':
+def chatbot(question, history):
     conn = connect()
     if conn:
         try:
             schema = get_schema(conn)
-            question = "¿Cuáles son los 3 adjudicatarios con más gasto?"
             sql = generate_sql(question, schema)
             sql = validate_sql(sql)
             results = execute_sql(conn, sql)
             answer = explain_results(question, results)
-            print(answer)
-
+    
         finally:
             conn.close()
+
+    return answer
+
+
+if __name__ == '__main__':
+    chatbot()
+    

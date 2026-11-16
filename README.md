@@ -6,6 +6,7 @@
   - [Índice](#índice)
   - [Introducción](#introducción)
   - [Estructura del proyecto](#estructura-del-proyecto)
+  - [Ejecución del proyecto](#ejecución-del-proyecto)
   - [Proceso ETL](#proceso-etl)
     - [Obtención de los datos](#obtención-de-los-datos)
     - [Contexto incial de los datos](#contexto-incial-de-los-datos)
@@ -75,6 +76,14 @@ contratos-menores/
 Para ejecutar el proyecto es necesario instalar los paquetes de dependencias usando el siguiente comando:
 
 `pip install -r requirements.txt`
+
+## Ejecución del proyecto
+
+Para ejecutar el proyecto y realizar la transformación, limpieza y exportación de los datos limpios ejecutar el siguiente comando desde la carpeta del proyecto, con las dependencias instaladas:
+
+`python -m src.main`
+
+Por el momento la extracción y carga de datos en Snowflake se realizan de forma manual.
 
 ## Proceso ETL
 

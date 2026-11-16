@@ -30,6 +30,7 @@
     - [Ejecución del proceso ETL](#ejecución-del-proceso-etl)
     - [Tests](#tests)
     - [Carga de datos en Snowflake](#carga-de-datos-en-snowflake)
+    - [Chatbot](#chatbot)
   - [Modelado de datos](#modelado-de-datos)
     - [Arquitectura Medallion](#arquitectura-medallion)
     - [Modelo de Estrella](#modelo-de-estrella)
@@ -93,6 +94,9 @@ contratos-menores/
 │   ├── extract/              # Script extracción automática
 │   ├── load/                 # Script conexión Snowflake
 │   ├── transform/            # Script limpieza
+│   ├── chatbot/
+│   │   ├── bot.py            # Lógica del modelo del chatbot
+│   │   └── interface.py      # Interfaz del chatbot
 │   └── utils/                # Funciones auxiliares
 └── requirements.txt          # Fichero de dependencias
 ```
@@ -264,13 +268,19 @@ Con la función `transform_files()` se ejecutan las funciones de exploración y 
 
 ### Ejecución del proceso ETL
 
-Para ejecutar el proceso de ETL se crea una función `launcher()` que se importa al fichero `src/main.py` para que al ejecutar este script se ejecute todo el programa.
+Para ejecutar el proceso de ETL se crea una función `launcher()` que se importa al fichero `src/main.py` para que al ejecutar este script se ejecute todo el programa. Simplemente ejecutar este comando:
+
+```bash
+python -m src.main
+```
 
 ### Tests 
 
 Los tests definidos se encargan de verificar si las transformaciones y limpiezas que se han hecho anteriormente. Para ejecutar y ver si el archivo final exportado pasa los tests se ejecuta el siguiente comando:
 
-`python -m pytest -v`
+```bash
+python -m pytest -v
+```
 
 ### Carga de datos en Snowflake
 
@@ -279,6 +289,22 @@ En el script `src/load/load.py` se ubican las funciones para la conexión con Sn
 La función `connect()` crea la conexión con Snowflake y con la función `create_table()` se crea una tabla vacía en el esquema indicado.
 
 **Error persistente en la carga de datos:** al intentar insertar los datos dentro de la tabla creada, da un error de certificados SSL. Se intentó insertar los datos mediante la función `write_pandas()` y mediante el comando de sql de Snowflake `PUT` para subir el archivo al stage y desde ahí hacer un `COPY`.
+
+### Chatbot
+
+Se ha desarrollado un chatbot con el modelo de Ollama: `qwen2.5-coder:7b` para que, a través de preguntas en lenguaje natural, el modelo las transcriba a queries de SQL y con la librería de python `snowflake.connection` haga la consulta. Finalmente el modelo devuelve el resultado de la consulta pasado a lenguaje natural.
+
+**Actualización:** se ha mejorado la interfaz del chatbot usando la librería de python `gradio`. 
+
+![Chatbot](img/chatbot.png)
+
+Para ejecutar el chatbot ejecutar desde la raíz del proyecto:
+
+```bash
+python -m src.chatbot.interface
+```
+
+Esto creará un localhost en el puerto `127.0.0.1:7860`.
 
 ## Modelado de datos
 
@@ -409,6 +435,7 @@ Para los contratos de obra eran más o menos ```48.000€``` y para los demás `
 
 La principal mejora que haría con más tiempo sería completar la automatización de todo el proceso ETL: para la extracción de datos se puede valorar la conexión a alguna API oficial que proporcione los datos requeridos, sino se puede optar por un scrappeo del portal oficial, siempre y cuando no se incumpla ninguna normativa. En cuanto a la conexión con Snowflake para la carga de datos, esto se puede hacer a través de la librería de python `snowflake-connector-python`.
 
+También me habría gustado afinar un poco las respuestas que da el chatbot, aunque al ser un modelo de versión gratuito se ve bastante limitado.
 
 
 

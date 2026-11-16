@@ -28,6 +28,7 @@
         - [Negociado](#negociado)
       - [Ejecución de la limpieza](#ejecución-de-la-limpieza)
     - [Ejecución del proceso ETL](#ejecución-del-proceso-etl)
+    - [Tests](#tests)
     - [Carga de datos en Snowflake](#carga-de-datos-en-snowflake)
   - [Modelado de datos](#modelado-de-datos)
     - [Arquitectura Medallion](#arquitectura-medallion)
@@ -264,6 +265,12 @@ Con la función `transform_files()` se ejecutan las funciones de exploración y 
 ### Ejecución del proceso ETL
 
 Para ejecutar el proceso de ETL se crea una función `launcher()` que se importa al fichero `src/main.py` para que al ejecutar este script se ejecute todo el programa.
+
+### Tests 
+
+Los tests definidos se encargan de verificar si las transformaciones y limpiezas que se han hecho anteriormente. Para ejecutar y ver si el archivo final exportado pasa los tests se ejecuta el siguiente comando:
+
+`python -m pytest -v`
 
 ### Carga de datos en Snowflake
 

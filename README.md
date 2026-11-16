@@ -5,6 +5,8 @@
 - [Análisis de las Contrataciones Menores Ayuntamiento de A Coruña](#análisis-de-las-contrataciones-menores-ayuntamiento-de-a-coruña)
   - [Índice](#índice)
   - [Introducción](#introducción)
+  - [Resumen de resultados](#resumen-de-resultados)
+    - [Principales hallazgos](#principales-hallazgos)
   - [Estructura del proyecto](#estructura-del-proyecto)
   - [Ejecución del proyecto](#ejecución-del-proyecto)
   - [Proceso ETL](#proceso-etl)
@@ -29,6 +31,7 @@
   - [Modelado de datos](#modelado-de-datos)
     - [Arquitectura Medallion](#arquitectura-medallion)
     - [Modelo de Estrella](#modelo-de-estrella)
+  - [Dashboard PowerBI](#dashboard-powerbi)
   - [Limitación de los datos](#limitación-de-los-datos)
   - [Hallazgos](#hallazgos)
     - [Hallazgo 1: Contrato fuera de periodo](#hallazgo-1-contrato-fuera-de-periodo)
@@ -39,6 +42,25 @@
 ## Introducción
 
 Este proyecto desarrolla una pipeline end-to-end de los datos sobre contrataciones menores en el Ayuntamiento de A Coruña en el periodo 2023-2026. El proyecto aborda desde la extracción, limpieza y carga de los datos (proceso ETL) hasta el modelado en Snowflake y su análisis con PowerBi.
+
+## Resumen de resultados
+
+Análisis de **~7.700 contratos menores** del Ayuntamiento de A Coruña entre 2023 y el primer trimestre de 2026, con un importe acumulado de **~28 M€**. Los datos se limpian con Python, se modelan en Snowflake (modelo en estrella) y se explotan en un dashboard de Power BI de tres hojas: resumen general, contratos cercanos al umbral legal y patrones en los importes.
+
+| Año | Contratos | Importe total | Importe medio |
+|---|---:|---:|---:|
+| 2023 | 2.536 | 7,77 M€ | ~3.060 € |
+| 2024 | 2.365 | 8,83 M€ | ~3.740 € |
+| 2025 | 2.269 | 8,90 M€ | ~3.920 € |
+| 2026 (solo 1T) | 519 | ~2,59 M€ | ~4.980 € |
+
+### Principales hallazgos
+
+1. **Menos contratos, pero más caros.** Entre 2023 y 2025 el número de contratos baja un 10,5 %, mientras que el gasto total sube un 14,5 % y el importe medio un 28 %.
+2. **El gasto se concentra.** Los contratos de servicios suponen más de 15 M€ (4.661 contratos), frente a 6,2 M€ en obras (308) y 5,2 M€ en suministros. Dos áreas, Servicios Generales de CI (3,83 M€ en 1.368 contratos) y Gestión de Deportes (3,62 M€ en 598), reúnen importes similares con modelos opuestos: muchos contratos pequeños frente a pocos y grandes.
+3. **Estacionalidad.** La contratación se concentra en octubre y noviembre (940 contratos en noviembre) y cae al mínimo en agosto.
+4. **El umbral legal se respeta casi siempre, una vez aplicado el IVA.** Comparando los importes con los límites sin IVA (15.000 € en servicios y suministros, 40.000 € en obras), 475 contratos parecían superarlos. Al aplicar el IVA al umbral (21 %), solo **3** lo superan. Los importes se acumulan justo por debajo de unos 18.150 € y 48.400 €, lo que indica que incluyen IVA (inferido del patrón, no indicado en los datos).
+
 
 ## Estructura del proyecto
 
@@ -266,7 +288,7 @@ Finalmente llegamos a la capa gold, donde se almacenan los datos listos para su 
 
 La estructura elegida para el modelado de las tablas relacionales es el modelo en estrella. Con esta estructura se diferencia la tabla de hechos y las dimensiones que aportan contexto.
 
-![Diagrama de la arquitectura medallion](img/ModeladoEstrella.png)
+![Modelado Estrella](img/ModeladoEstrella.png)
 
 La tabla de hechos `FACT_CONTRATOS` tiene una fila por contrato y contiene la referencia, el precio y las claves foráneas a las dimensiones.
 
@@ -282,6 +304,20 @@ Cada clave foránea de `FACT_CONTRATOS` se relaciona con la clave primaria de su
 El modelo se crea mediante los scripts SQL de `sql/modeling/`. La tabla limpia se carga primero en `CONTRATOS_STAGING` y se usa como origen para construir las dimensiones y la tabla de hechos.
 
 **Granularidad:** una fila por registro de contrato.  
+
+## Dashboard PowerBI
+
+Después del modelado, los datos se muestran en las tres hojas siguientes de PowerBI. Con la primera hoja, se puede ver de un vistazo los datos más generales y relevantes del conjunto de datos como: los contratos y gastos totales o los adjudicatarios y negociados que más gasto tienen:
+
+![Hoja 1 PBI](img/pbi1.png)
+
+En la segunda hoja, se hace especial incapié en los contratos que se concentran cerca de los umbrales legales (entorno al 95 - 100%). Esta página es especialmente útil para identificar a esos adjudicatarios que realizan varios contratos con este margen, ya que pueden ser indicios de particiones:
+
+![Hoja 2 PBI](img/pbi2.png)
+
+Finalmente, la última hoja ayuda a identificar patrones y detectar posibles irregularidades. Muestra una tendencia de gastos con posibles anomalías o la distribución de los contratos señalando como zona roja los contratos por encima del 95%:
+
+![Hoja 3 PBI](img/pbi3.png)
 
 ## Limitación de los datos
 

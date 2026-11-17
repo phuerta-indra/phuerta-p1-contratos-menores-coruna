@@ -17,7 +17,7 @@ BASE_DIR = get_base_dir()
 GOLD_DIR = get_gold_path()
 
 
-SCHEMA = 'ANALYTICS'
+SCHEMA = 'AUTO_LOAD'
 TABLE = 'CONTRATOS_MENORES_AUTO'
 
 

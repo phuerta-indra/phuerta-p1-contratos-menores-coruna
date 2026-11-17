@@ -301,7 +301,7 @@ Se ha desarrollado un chatbot con el modelo de Ollama: `qwen2.5-coder:7b` para q
 Para ejecutar el chatbot ejecutar desde la raíz del proyecto:
 
 ```bash
-python -m src.chatbot.interface
+python -m src.chatbot.app
 ```
 
 Esto creará un localhost en el puerto `127.0.0.1:7860`.

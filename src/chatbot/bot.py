@@ -6,6 +6,7 @@ from pathlib import Path
 from src.utils.config import get_base_dir
 
 
+BASE_DIR = get_base_dir()
 
 
 def get_schema(conn):
@@ -30,8 +31,6 @@ def get_schema(conn):
 
 
 def generate_sql(question, schema):
-
-    BASE_DIR = get_base_dir()
 
     context = (BASE_DIR / 'src' / 'chatbot' / 'context.md').read_text(encoding='utf-8')
 
@@ -82,9 +81,12 @@ def generate_sql(question, schema):
         },
     ]"""
 
-    response = ollama.chat(
+    client = ollama.Client(timeout=120)
+
+    response = client.chat(
         model='qwen2.5-coder:7b',
-        messages=messages
+        messages=messages,
+        keep_alive='10m'
     )
 
     return response['message']['content'].strip()
@@ -116,7 +118,7 @@ def execute_sql(conn, sql):
     with conn.cursor() as cur:
         cur.execute(sql)
         columns = [description[0] for description in cur.description]
-        rows = cur.fetchmany(500)
+        rows = cur.fetchmany(20)
 
     return [dict(zip(columns, row)) for row in rows]
 
@@ -149,21 +151,27 @@ def explain_results(question, results):
 
 def chatbot(question, history):
 
-    conn = connect()
-    if conn:
-        try:
-            schema = get_schema(conn)
-            sql = generate_sql(question, schema)
-            print('Query generada:', sql)
-            sql = validate_sql(sql)
-            results = execute_sql(conn, sql)
-            answer = explain_results(question, results)
+    conn = None
     
-
-        finally:
-            conn.close()
+    try:  
+        conn = connect()          
+        schema = get_schema(conn)
+        sql = generate_sql(question, schema)
+        sql = validate_sql(sql)
+        print('Query generada: \n', sql)
+        results = execute_sql(conn, sql)
+        answer = explain_results(question, results)
 
         return answer
+
+    except Exception as e:
+        print('Error procesando la pregunta:', e)
+        return f'No he podido responder a esa pregunta: {e}'
+
+    finally:
+        conn.close()
+
+        
 
 
 

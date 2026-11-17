@@ -12,4 +12,5 @@ if __name__ == '__main__':
     demo.launch(
         theme=gr.themes.Soft(),
         css=css_path,
+        allowed_paths=['img']
     )

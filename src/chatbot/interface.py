@@ -1,14 +1,21 @@
 import gradio as gr
 from src.chatbot.bot import chatbot
+import base64
 from pathlib import Path
 
-
+def imagen_a_texto(ruta):
+    datos = base64.b64encode(Path(ruta).read_bytes()).decode("ascii")
+    return f"data:image/png;base64,{datos}"
 
 def demo_func():
 
+    logo = imagen_a_texto(Path(__file__).parent.parent.parent / "img" / "logo.png")
+    logo_placeholder = f'<div class="logo-chat"><img src="{logo}" alt="Logo"></div>'
+
+
     chat = gr.Chatbot(
-        height=500,
-        placeholder="Hola. Pregúntame algo sobre los contratos menores.",
+        height=700,
+        placeholder=logo_placeholder,
     )
 
 
